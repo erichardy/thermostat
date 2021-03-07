@@ -30,11 +30,17 @@ OneWire oneWire(DS18B20_PIN);
 DallasTemperature sensors(&oneWire);
 DeviceAddress insideThermometer;
 float tempC; // Current temperature
-float tempT = 19.5; // Target temperature
+float tempT = 14.0; // Target temperature
+#define tempStep 0.2
 
 #define PLUS_PIN 3
 #define MINUS_PIN 2
-#define HEATING_PIN 7 // relay pin
+#define BTN1 3
+#define BTN2 2
+#define BTN_DELAY 5000
+#define HEATING_PIN 8 // relay pin
+#define HEATING_DELAY 20000000 // 20000000 uSec = 20sec.
+bool heatingActive = 0 ;
 
 int i = 0;
 int d = 0;
@@ -49,11 +55,27 @@ void printAddress(DeviceAddress deviceAddress)
   }
 }
 
-void heating(bool OnOff) {
+void heating(bool On) {
   // turn ON or OFF the heating
+  unsigned long _micros = micros() ;
+  static unsigned long lastChange = 0 ;
+  // if delai too short beetween 2 transitions, we do nothing
+  // this is to prevent switches too fast of the thermostat
+  if ((_micros - lastChange) < HEATING_DELAY) {
+    return ;
+  }
+  // the delai is ok
+  if (On) {
+    digitalWrite(HEATING_PIN, HIGH) ;
+    heatingActive = 1 ;
+  } else {
+    digitalWrite(HEATING_PIN, LOW) ;
+    heatingActive = 0 ;
+  }
+  lastChange = _micros ;
 }
 void scanI2C() {
-byte error, address; //variable for error and I2C address
+  byte error, address; //variable for error and I2C address
   int nDevices;
 
   Serial.println("Scanning...");
@@ -91,7 +113,10 @@ void setup() {
   //
   pinMode(PLUS_PIN, INPUT_PULLUP);
   pinMode(MINUS_PIN, INPUT_PULLUP);
+  // attachInterrupt(digitalPinToInterrupt(BTN1), btn1, LOW);
+  // attachInterrupt(digitalPinToInterrupt(BTN2), btn2, LOW);
   pinMode(HEATING_PIN, OUTPUT);
+  digitalWrite(HEATING_PIN, LOW) ;
   //
   Serial.println("ok, paré...");
   Wire.begin();
@@ -124,17 +149,53 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  static unsigned long lastPressBTN1 = 0;
+  static unsigned long lastPressBTN2 = 0;
+  unsigned long _microsBTN1, _microsBTN2;
+  uint8_t btn1 = digitalRead(BTN1) ;
+  uint8_t btn2 = digitalRead(BTN2) ;
+  bool on = 1, off = 0;
+  if (btn1 == LOW) {
+    // Serial.println("BTN1 pressed.") ;
+    _microsBTN1 = micros() ;
+    if ((_microsBTN1 - lastPressBTN1) >= BTN_DELAY) {
+      tempT -= tempStep ;
+      }
+    lastPressBTN1 = _microsBTN1 ;
+  }
+  if (btn2 == LOW) {
+    // Serial.println("BTN2 pressed.") ;
+    _microsBTN2 = micros() ;
+    if ((_microsBTN2 - lastPressBTN2) >= BTN_DELAY) {
+      tempT += tempStep ;
+      }
+    lastPressBTN2 = _microsBTN2 ;
+  }
+
   // scanI2C();
   display.clearDisplay();
   display.setCursor(0,0);
   
   sensors.requestTemperatures();
   tempC = sensors.getTempC(insideThermometer);
+  if (tempC < 0) tempC = 18.0 ;
   //
   display.print("T : ");
   display.println(tempC);
   display.print(" -> ");
-  display.println(tempT);
+  if (heatingActive) {
+    display.print(tempT);
+    display.println("*");
+  } else {
+    display.println(tempT);
+  }
   display.display();
-  delay(1500);
+  
+  if (tempC < tempT) {
+    heating(on) ;
+  } else {
+    heating(off) ;
+  }
+  
+  delay(300);
 }

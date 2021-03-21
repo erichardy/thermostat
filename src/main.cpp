@@ -37,7 +37,7 @@ float tempT = 14.0; // Target temperature
 #define MINUS_PIN 2
 #define BTN1 3
 #define BTN2 2
-#define BTN_DELAY 5000
+#define BTN_DELAY 100
 #define HEATING_PIN 8 // relay pin
 #define HEATING_DELAY 20000000 // 20000000 uSec = 20sec.
 bool heatingActive = 0 ;
@@ -107,14 +107,32 @@ void scanI2C() {
   delay(5000);
 }
 
+void btn1() {
+  static unsigned long lastPressBTN1 = 0;
+  unsigned long _millisBTN1 = millis();
+  if ((_millisBTN1 - lastPressBTN1) >= BTN_DELAY) {
+      tempT -= tempStep ;
+      }
+  lastPressBTN1 = _millisBTN1;
+}
+
+void btn2() {
+  static unsigned long lastPressBTN2 = 0;
+  unsigned long _millisBTN2 = millis();
+  if ((_millisBTN2 - lastPressBTN2) >= BTN_DELAY) {
+      tempT += tempStep ;
+      }
+  lastPressBTN2 = _millisBTN2;
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   //
   pinMode(PLUS_PIN, INPUT_PULLUP);
   pinMode(MINUS_PIN, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(BTN1), btn1, LOW);
-  // attachInterrupt(digitalPinToInterrupt(BTN2), btn2, LOW);
+  attachInterrupt(digitalPinToInterrupt(BTN1), btn1, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BTN2), btn2, FALLING);
   pinMode(HEATING_PIN, OUTPUT);
   digitalWrite(HEATING_PIN, LOW) ;
   //
@@ -149,12 +167,12 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  /*
   static unsigned long lastPressBTN1 = 0;
   static unsigned long lastPressBTN2 = 0;
   unsigned long _microsBTN1, _microsBTN2;
   uint8_t btn1 = digitalRead(BTN1) ;
   uint8_t btn2 = digitalRead(BTN2) ;
-  bool on = 1, off = 0;
   if (btn1 == LOW) {
     // Serial.println("BTN1 pressed.") ;
     _microsBTN1 = micros() ;
@@ -163,6 +181,7 @@ void loop() {
       }
     lastPressBTN1 = _microsBTN1 ;
   }
+  
   if (btn2 == LOW) {
     // Serial.println("BTN2 pressed.") ;
     _microsBTN2 = micros() ;
@@ -171,7 +190,8 @@ void loop() {
       }
     lastPressBTN2 = _microsBTN2 ;
   }
-
+  */
+  bool on = 1, off = 0;
   // scanI2C();
   display.clearDisplay();
   display.setCursor(0,0);

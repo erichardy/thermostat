@@ -40,6 +40,8 @@ float tempT = 14.0; // Target temperature
 #define BTN_DELAY 100
 #define HEATING_PIN 8 // relay pin
 #define HEATING_DELAY 20000000 // 20000000 uSec = 20sec.
+#define HYSTERESIS .1
+
 bool heatingActive = 0 ;
 
 int i = 0;
@@ -211,11 +213,15 @@ void loop() {
   }
   display.display();
   
-  if (tempC < tempT) {
-    heating(on) ;
-  } else {
-    heating(off) ;
+  if (tempC <= (tempT - HYSTERESIS)) {
+    if (!heatingActive) {
+      heating(on) ;
+    }
+  } else if (tempC >= (tempT + HYSTERESIS)) {
+    if (heatingActive) {
+      heating(off) ;
+    }
   }
   
-  delay(300);
+  delay(100);
 }

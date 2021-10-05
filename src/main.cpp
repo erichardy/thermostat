@@ -37,7 +37,7 @@ float tempT = 14.0; // Target temperature
 #define MINUS_PIN 2
 #define BTN1 3
 #define BTN2 2
-#define BTN_DELAY 100
+#define BTN_DELAY 300
 #define HEATING_PIN 8 // relay pin
 #define HEATING_DELAY 20000000 // 20000000 uSec = 20sec.
 #define HYSTERESIS .1
@@ -61,12 +61,12 @@ void heating(bool On) {
   // turn ON or OFF the heating
   unsigned long _micros = micros() ;
   static unsigned long lastChange = 0 ;
-  // if delai too short beetween 2 transitions, we do nothing
+  // if delay too short beetween 2 transitions, we do nothing
   // this is to prevent switches too fast of the thermostat
   if ((_micros - lastChange) < HEATING_DELAY) {
     return ;
   }
-  // the delai is ok
+  // the delay is ok
   if (On) {
     digitalWrite(HEATING_PIN, HIGH) ;
     heatingActive = 1 ;
@@ -128,7 +128,6 @@ void btn2() {
 }
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   //
   pinMode(PLUS_PIN, INPUT_PULLUP);
@@ -168,31 +167,6 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  /*
-  static unsigned long lastPressBTN1 = 0;
-  static unsigned long lastPressBTN2 = 0;
-  unsigned long _microsBTN1, _microsBTN2;
-  uint8_t btn1 = digitalRead(BTN1) ;
-  uint8_t btn2 = digitalRead(BTN2) ;
-  if (btn1 == LOW) {
-    // Serial.println("BTN1 pressed.") ;
-    _microsBTN1 = micros() ;
-    if ((_microsBTN1 - lastPressBTN1) >= BTN_DELAY) {
-      tempT -= tempStep ;
-      }
-    lastPressBTN1 = _microsBTN1 ;
-  }
-  
-  if (btn2 == LOW) {
-    // Serial.println("BTN2 pressed.") ;
-    _microsBTN2 = micros() ;
-    if ((_microsBTN2 - lastPressBTN2) >= BTN_DELAY) {
-      tempT += tempStep ;
-      }
-    lastPressBTN2 = _microsBTN2 ;
-  }
-  */
   bool on = 1, off = 0;
   // scanI2C();
   display.clearDisplay();

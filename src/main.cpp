@@ -4,6 +4,12 @@ Multiple OLED SSD1306 Displays using 2IC : https://forum.arduino.cc/index.php?to
 https://bitbanksoftware.blogspot.com/2019/01/controlling-lots-of-oled-displays-with.html
 TCA9548A I2C Multiplexer : https://www.youtube.com/watch?v=vV42fCpmCFg
 */
+/*
+Alemiorations a apporter :
+1- 3 temperatures prereglees : 14, 17, 19 et des boutons pour y acceder directement
+2- un interrupteur marche/arret sur le PCB
+
+*/
 
 #include <Arduino.h>
 // Include Wire Library for I2C
@@ -30,7 +36,7 @@ OneWire oneWire(DS18B20_PIN);
 DallasTemperature sensors(&oneWire);
 DeviceAddress insideThermometer;
 float tempC; // Current temperature
-float tempT = 14.0; // Target temperature
+float tempT = 15.0; // Target temperature
 #define tempStep 0.2
 
 #define PLUS_PIN 3
@@ -39,8 +45,8 @@ float tempT = 14.0; // Target temperature
 #define BTN2 2
 #define BTN_DELAY 300
 #define HEATING_PIN 8 // relay pin
-#define HEATING_DELAY 20000000 // 20000000 uSec = 20sec.
-#define HYSTERESIS .1
+#define HEATING_DELAY 40000000 // 40000000 uSec = 40sec.
+#define HYSTERESIS .2
 
 bool heatingActive = 0 ;
 

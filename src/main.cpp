@@ -39,10 +39,12 @@ float tempC; // Current temperature
 float tempT = 15.0; // Target temperature
 #define tempStep 0.2
 
+// PLUS_PIN and MINUS_Pin are used for setting target temperature via buttons BTN1 and BTN2 buttons
 #define PLUS_PIN 3
 #define MINUS_PIN 2
 #define BTN1 3
 #define BTN2 2
+
 #define BTN_DELAY 300
 #define HEATING_PIN 8 // relay pin
 #define HEATING_DELAY 40000000 // 40000000 uSec = 40sec.
@@ -82,6 +84,7 @@ void heating(bool On) {
   }
   lastChange = _micros ;
 }
+
 void scanI2C() {
   byte error, address; //variable for error and I2C address
   int nDevices;
@@ -177,7 +180,7 @@ void loop() {
   // scanI2C();
   display.clearDisplay();
   display.setCursor(0,0);
-  
+
   sensors.requestTemperatures();
   tempC = sensors.getTempC(insideThermometer);
   if (tempC < 0) tempC = 18.0 ;
@@ -192,7 +195,7 @@ void loop() {
     display.println(tempT);
   }
   display.display();
-  
+
   if (tempC <= (tempT - HYSTERESIS)) {
     if (!heatingActive) {
       heating(on) ;
@@ -202,6 +205,5 @@ void loop() {
       heating(off) ;
     }
   }
-  
   delay(100);
 }

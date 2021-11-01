@@ -2,6 +2,7 @@
 multiple OLED displays withnthe same adress :
 Multiple OLED SSD1306 Displays using 2IC : https://forum.arduino.cc/index.php?topic=248663.0
 https://bitbanksoftware.blogspot.com/2019/01/controlling-lots-of-oled-displays-with.html
+https://randomnerdtutorials.com/guide-for-oled-display-with-arduino/
 TCA9548A I2C Multiplexer : https://www.youtube.com/watch?v=vV42fCpmCFg
 */
 /*
@@ -16,6 +17,7 @@ Alemiorations a apporter :
 #include <Wire.h>
 #include <RTClib.h>
 RTC_DS1307 rtc;
+DateTime now;
 
 // Include Adafruit Graphics & OLED libraries
 #include <Adafruit_GFX.h>
@@ -26,7 +28,7 @@ RTC_DS1307 rtc;
 
 // see https://github.com/adafruit/Adafruit_SSD1306/blob/master/examples/ssd1306_128x32_i2c/ssd1306_128x32_i2c.ino
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 4
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -51,6 +53,10 @@ float tempT = 15.0; // Target temperature
 #define HEATING_PIN 8 // relay pin
 #define HEATING_DELAY 40000000 // 40000000 uSec = 40sec.
 #define HYSTERESIS .2
+
+#define PRESET_PIN A2;
+float preset_position;
+int volts;
 
 bool heatingActive = 0 ;
 
@@ -162,7 +168,7 @@ void testRTC() {
   // This line sets the RTC with an explicit date & time, for example to set
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  DateTime now = rtc.now();
+  now = rtc.now();
   Serial.print(now.year(), DEC);
   Serial.print('/');
   Serial.print(now.month(), DEC);
@@ -190,6 +196,8 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(BTN2), btn2, FALLING);
   pinMode(HEATING_PIN, OUTPUT);
   digitalWrite(HEATING_PIN, LOW) ;
+  //
+  pinMode(A2, INPUT);
   //
   Serial.println("ok, paré...");
   Wire.begin();
@@ -233,8 +241,10 @@ void loop() {
   tempC = sensors.getTempC(insideThermometer);
   if (tempC < 0) tempC = 18.0 ;
   //
+  display.setTextSize(2);
   display.print("T : ");
   display.println(tempC);
+
   display.print(" -> ");
   if (heatingActive) {
     display.print(tempT);
@@ -242,7 +252,16 @@ void loop() {
   } else {
     display.println(tempT);
   }
-  display.display();
+  display.setTextSize(2);
+  display.setCursor(10, 33);
+  now = rtc.now();
+  display.print(now.hour(), DEC);
+  display.print(':');
+  display.print(now.minute(), DEC);
+  display.print(':');
+  display.print(now.second(), DEC);
+  display.println();
+  
 
   if (tempC <= (tempT - HYSTERESIS)) {
     if (!heatingActive) {
@@ -253,5 +272,11 @@ void loop() {
       heating(off) ;
     }
   }
-  delay(100);
+  preset_position = analogRead(A2);
+  
+  volts = map(preset_position, 0, 1024, 0, 255);
+  display.setCursor(0, 51);
+  display.println(volts);
+  display.display();
+  delay(800);
 }

@@ -11,7 +11,25 @@ Alemiorations a apporter :
 2- un interrupteur marche/arret sur le PCB
 
 */
+/*
+Pinout summary :
+Digital pins
+2 : Btn1, minus button for settings
+3 : Btn2, plus button for settings
+4 : 3 positions switch, temperatures presets
+5 : 3 positions switch, time settings
+6 : blue LED
+7 : yellow LED
+8 : Relay (HEATING)
+9 : DS18B20 (One Wire)
 
+Analog pins
+A2 : presets, 6 positions switch
+A4 : SDA (I2C)
+A5 : SCL (I2C)
+
+*/
+// #define X_RTC
 #include <Arduino.h>
 // Include Wire Library for I2C
 #include <Wire.h>
@@ -54,11 +72,12 @@ float tempT = 15.0; // Target temperature
 #define HEATING_DELAY 40000000 // 40000000 uSec = 40sec.
 #define HYSTERESIS .2
 
-#define PRESET_PIN A2;
 float preset_position;
 int volts;
 
 bool heatingActive = 0 ;
+bool LEDon = 0;
+int sw1, sw2;
 
 int i = 0;
 int d = 0;
@@ -225,14 +244,40 @@ void setup() {
   Serial.println();
   sensors.setResolution(insideThermometer, TEMPERATURE_PRECISION);
   //
+  #ifdef X_RTC
   delay(500);
   Serial.println("testRTC...");
   testRTC();
+  #endif
+  pinMode(4, INPUT_PULLUP);
+  pinMode(5, INPUT_PULLUP);
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+  digitalWrite(6, LOW);
+  digitalWrite(7, LOW);
   delay(500);
 }
 
 void loop() {
   bool on = 1, off = 0;
+  
+  if (LEDon) {
+    // Serial.println("Allumé");
+    digitalWrite(6, HIGH);
+    digitalWrite(7, HIGH);
+    LEDon = 0;
+  } else {
+    // Serial.println("eteint");
+    digitalWrite(6, LOW);
+    digitalWrite(7, LOW);
+    LEDon = 1;
+  }
+  sw1 = digitalRead(4);
+  sw2 = digitalRead(5);
+  Serial.print("sw1 : ");
+  Serial.print(sw1);
+  Serial.print("   sw2 : ");
+  Serial.println(sw2);
   // scanI2C();
   display.clearDisplay();
   display.setCursor(0,0);
@@ -252,6 +297,7 @@ void loop() {
   } else {
     display.println(tempT);
   }
+  #ifdef X_RTC
   display.setTextSize(2);
   display.setCursor(10, 33);
   now = rtc.now();
@@ -261,7 +307,7 @@ void loop() {
   display.print(':');
   display.print(now.second(), DEC);
   display.println();
-  
+  #endif
 
   if (tempC <= (tempT - HYSTERESIS)) {
     if (!heatingActive) {

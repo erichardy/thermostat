@@ -18,8 +18,8 @@ Digital pins
 3 : Btn2, plus button for settings
 4 : 3 positions switch, temperatures presets
 5 : 3 positions switch, time settings
-6 : blue LED
-7 : yellow LED
+6 : yellow LED
+7 : blue LED
 8 : Relay (HEATING)
 9 : DS18B20 (One Wire)
 
@@ -29,14 +29,15 @@ A4 : SDA (I2C)
 A5 : SCL (I2C)
 
 */
-// #define X_RTC
+#define X_RTC
 #include <Arduino.h>
 // Include Wire Library for I2C
 #include <Wire.h>
 #include <RTClib.h>
 RTC_DS1307 rtc;
+/*
 DateTime now;
-
+*/
 // Include Adafruit Graphics & OLED libraries
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -71,6 +72,9 @@ float tempT = 15.0; // Target temperature
 #define HEATING_PIN 8 // relay pin
 #define HEATING_DELAY 40000000 // 40000000 uSec = 40sec.
 #define HYSTERESIS .2
+// LEDs
+#define YELLOW 6
+#define BLUE 7
 
 float preset_position;
 int volts;
@@ -78,7 +82,7 @@ int volts;
 bool heatingActive = 0 ;
 bool LEDon = 0;
 int sw1, sw2;
-
+bool on = 1, off = 0;
 int i = 0;
 int d = 0;
 
@@ -110,6 +114,14 @@ void heating(bool On) {
     heatingActive = 0 ;
   }
   lastChange = _micros ;
+}
+
+void led(int color, bool onOff) {
+  if (onOff) {
+    digitalWrite(color, HIGH);
+  } else {
+    digitalWrite(color, LOW);
+  }
 }
 
 void scanI2C() {
@@ -163,14 +175,15 @@ void btn2() {
   lastPressBTN2 = _millisBTN2;
 }
 
+
 void testRTC() {
   // example from https://github.com/adafruit/RTClib/blob/master/examples/ds1307/ds1307.ino
+  DateTime now;
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
     Serial.flush();
     abort();
   }
-
   if (! rtc.isrunning()) {
     Serial.println("RTC is NOT running, let's set the time!");
     // When time needs to be set on a new device, or after a power loss, the
@@ -180,7 +193,6 @@ void testRTC() {
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   }
-
   // When time needs to be re-set on a previously configured device, the
   // following line sets the RTC to the date & time this sketch was compiled
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
@@ -201,14 +213,10 @@ void testRTC() {
   Serial.println();
 }
 
+
 void setup() {
   Serial.begin(9600);
-  //
-  /*
-  delay(500);
-  scanI2C();
-  delay(500);
-  */
+  
   pinMode(PLUS_PIN, INPUT_PULLUP);
   pinMode(MINUS_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN1), btn1, FALLING);
@@ -244,41 +252,43 @@ void setup() {
   Serial.println();
   sensors.setResolution(insideThermometer, TEMPERATURE_PRECISION);
   //
+  /*
   #ifdef X_RTC
   delay(500);
   Serial.println("testRTC...");
   testRTC();
   #endif
+  */
+  testRTC();
+
   pinMode(4, INPUT_PULLUP);
   pinMode(5, INPUT_PULLUP);
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
-  digitalWrite(6, LOW);
-  digitalWrite(7, LOW);
+  digitalWrite(YELLOW, LOW);
+  digitalWrite(BLUE, LOW);
   delay(500);
 }
 
 void loop() {
-  bool on = 1, off = 0;
-  
+  DateTime now;
+  /* */
   if (LEDon) {
-    // Serial.println("Allumé");
-    digitalWrite(6, HIGH);
-    digitalWrite(7, HIGH);
+    led(YELLOW, on);
     LEDon = 0;
   } else {
-    // Serial.println("eteint");
-    digitalWrite(6, LOW);
-    digitalWrite(7, LOW);
+    led(YELLOW, off);
     LEDon = 1;
   }
+  /* */
   sw1 = digitalRead(4);
   sw2 = digitalRead(5);
   Serial.print("sw1 : ");
   Serial.print(sw1);
   Serial.print("   sw2 : ");
   Serial.println(sw2);
-  // scanI2C();
+  /* */
+  /* */
   display.clearDisplay();
   display.setCursor(0,0);
 
@@ -297,6 +307,7 @@ void loop() {
   } else {
     display.println(tempT);
   }
+  /* */
   #ifdef X_RTC
   display.setTextSize(2);
   display.setCursor(10, 33);
@@ -308,7 +319,7 @@ void loop() {
   display.print(now.second(), DEC);
   display.println();
   #endif
-
+  /* */
   if (tempC <= (tempT - HYSTERESIS)) {
     if (!heatingActive) {
       heating(on) ;
@@ -321,6 +332,12 @@ void loop() {
   preset_position = analogRead(A2);
   
   volts = map(preset_position, 0, 1024, 0, 255);
+  /* Values for volts :    19 45 77 142 198 240
+     Corresponding temps : 14 16 17 18  19       degrees
+  */
+  if ((volts > 190) && (volts < 210)) {
+    tempT = 19;
+  }
   display.setCursor(0, 51);
   display.println(volts);
   display.display();

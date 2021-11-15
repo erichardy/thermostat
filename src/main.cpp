@@ -159,10 +159,13 @@ void scanI2C() {
 void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
+  uint8_t sw2;
+  // sw2 = digitalRead(5); // we enter in clock set mode
   if ((_millisBTN1 - lastPressBTN1) >= BTN_DELAY) {
-      tempT -= tempStep ;
-      }
-  lastPressBTN1 = _millisBTN1;
+        tempT -= tempStep ;
+    }
+    lastPressBTN1 = _millisBTN1;
+  }
 }
 
 void btn2() {
@@ -326,7 +329,7 @@ void setup() {
 
 void loop() {
   float tempC; // Current temperature
-  int sw1, sw2;
+  // int sw1, sw2;
   bool on = 1, off = 0;
   // int volts;
   DateTime now;
@@ -345,14 +348,14 @@ void loop() {
   cli();
   _tempT = tempT;
   SREG = oldSREG;
-  /* */
+  /*
   sw1 = digitalRead(4); // we use preset value for tempT
   sw2 = digitalRead(5); // we enter in clock set mode
   Serial.print("sw1 : ");
   Serial.print(sw1);
   Serial.print("   sw2 : ");
   Serial.println(sw2);
-  /* */
+  */
   /* */
   sensors.requestTemperatures();
   tempC = sensors.getTempC(insideThermometer);

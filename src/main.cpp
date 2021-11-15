@@ -61,8 +61,9 @@ DeviceAddress insideThermometer;
 
 // for "volatile", see https://www.youtube.com/watch?v=55YEZppz7p4
 volatile float tempT = 15.0; // Target temperature
+volatile float tempStep = 0.2;
+
 volatile char mode;
-#define tempStep 0.2
 
 // PLUS_PIN and MINUS_Pin are used for setting target temperature via buttons BTN1 and BTN2 buttons
 #define PLUS_PIN 3
@@ -115,65 +116,35 @@ void heating(bool On) {
   lastChange = _micros ;
 }
 
-void led(int color, bool onOff) {
+void led(int LEDcolor, bool onOff) {
   if (onOff) {
-    digitalWrite(color, HIGH);
+    digitalWrite(LEDcolor, HIGH);
   } else {
-    digitalWrite(color, LOW);
+    digitalWrite(LEDcolor, LOW);
   }
-}
-
-void scanI2C() {
-  byte error, address; //variable for error and I2C address
-  int nDevices;
-
-  Serial.println("Scanning...");
-
-  nDevices = 0;
-  for (address = 1; address < 127; address++ )
-  {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.println("  !");
-      nDevices++;
-    }
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
-
-  delay(5000);
 }
 
 // see : https://www.youtube.com/watch?v=55YEZppz7p4
 void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
-  // sw2 = digitalRead(5); // we enter in clock set mode
   if ((_millisBTN1 - lastPressBTN1) >= BTN_DELAY) {
+    if (mode == 0) {
         tempT -= tempStep ;
     }
     lastPressBTN1 = _millisBTN1;
   }
+}
 
 void btn2() {
   static unsigned long lastPressBTN2 = 0;
   unsigned long _millisBTN2 = millis();
   if ((_millisBTN2 - lastPressBTN2) >= BTN_DELAY) {
+    if (mode == 0) {
       tempT += tempStep ;
       }
-  lastPressBTN2 = _millisBTN2;
+    lastPressBTN2 = _millisBTN2;
+  }
 }
 
 /* We use the 6 positions switch for the 6 different modes */
@@ -247,35 +218,50 @@ void setup() {
   // set date and time at compilation time
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   /* */
-  
   delay(200);
 }
 
 void loop() {
   float tempC; // Current temperature
-  // int sw1, sw2;
+  uint8_t sw1, sw2;
   bool on = 1, off = 0;
-  const char *modesT[6];
-  modesT[0] = "basic mode";
-  modesT[1] = "Mode 1";
-  modesT[2] = "Mode 2";
-  modesT[3] = "Mode 3";
-  modesT[4] = "Mode 4";
-  modesT[5] = "Mode 5";
-
   DateTime now;
   float _tempT;
   uint8_t oldSREG = SREG;
   //
-  mode = getMode();
-  /*
   sw1 = digitalRead(4);
   sw2 = digitalRead(5);
+  /*
   Serial.print("sw1 : ");
   Serial.print(sw1);
   Serial.print("   sw2 : ");
   Serial.println(sw2);
   */
+  mode = getMode();
+  switch(mode) {
+    // mode 0 is the more basic mode
+    case 0:
+      if (!sw2) {tempStep = 1.0; led(BLUE, 1); led(YELLOW, 0);}
+      if (!sw1) {tempStep = 0.2; led(YELLOW, 1);led(BLUE, 0);}
+      if (sw1 && sw2) {tempStep = 0.5; led(YELLOW, 0);led(BLUE, 0);}
+      break;
+    /*
+    case 1:
+      break;
+    case 2:
+      break;
+    case 3:
+      break;
+    case 4:
+      break;
+    // time setting
+    case 5:
+      break;
+      */
+    default:
+      {tempStep = 0.2; led(YELLOW, 0);led(BLUE, 0);}
+      break;
+  }
   /* */
   sensors.requestTemperatures();
   tempC = sensors.getTempC(insideThermometer);
@@ -309,6 +295,7 @@ void loop() {
     display.println(_tempT);
   }
   /* */
+  /* */
   #ifdef X_RTC
   display.setTextSize(2);
   display.setCursor(10, 33);
@@ -320,9 +307,10 @@ void loop() {
   display.print(now.second(), DEC);
   display.println();
   #endif
-  display.setCursor(0, 51);
-  display.println(modesT[mode]);
-  
+  /* */
+  // display.setCursor(0, 48);
+  display.print("mode : ");
+  display.print((int)mode);
   display.display();
   delay(200);
 }

@@ -215,18 +215,16 @@ void testRTC() {
   Serial.println();
 }
 
-void presetTempT() {
-  if (digitalRead(4)) {
-    return;
-  }
-  int16_t preset_position;
+/* We use the 6 positions switch for the 6 different modes
+*/
+char getMode() {
+  int16_t mode_position;
   int16_t pos;
-  int16_t presets[] = {77, 184, 313, 571, 797, 965};
-  uint8_t temps[] = {12, 14, 16, 17, 18, 19};
-  uint8_t newTempT, i;
+  int16_t modes[] = {77, 184, 313, 571, 797, 965};
   uint8_t oldSREG = SREG;
+  char mode; // short integer, 0 -> 5, for the six modes
   // digitalRead(4) = sw1 = 0 => set tempT to one of the preset values
-  preset_position = analogRead(A2);
+  mode_position = analogRead(A2);
   
   // volts = map(preset_position, 0, 1024, 0, 255);
   /* Values for volts :           19  45  77 142 198 240
@@ -234,20 +232,18 @@ void presetTempT() {
      Corresponding tempertures :  12  14  16  17  18  19 degrees
   */
   for (i = 0; i < 6 ; i++) {
-    pos = presets[i] - preset_position;
+    pos = modes[i] - mode_position;
     if (abs(pos) < 10) {
-      newTempT = temps[i];
+      mode = i;
       break;
     }
   }
-  cli();
-  tempT = float(newTempT);
-  SREG = oldSREG;
+  retun(i);
   /* Serial.print(i);
   Serial.print(" ");
-  // Serial.print(presets[i]);
+  // Serial.print(modes[i]);
   Serial.print(" ");
-  Serial.print(preset_position);
+  Serial.print(mode_position);
   Serial.print(" ");
   Serial.println(pos); */
   /*
@@ -336,6 +332,7 @@ void loop() {
   // static bool LEDon = 0;
   float _tempT;
   uint8_t oldSREG = SREG;
+  char mode;
   /*
   if (LEDon) {
     led(YELLOW, on);
@@ -344,10 +341,7 @@ void loop() {
   }
   LEDon = !LEDon;
   */
-  presetTempT();
-  cli();
-  _tempT = tempT;
-  SREG = oldSREG;
+  mode = getMode();
   /*
   sw1 = digitalRead(4); // we use preset value for tempT
   sw2 = digitalRead(5); // we enter in clock set mode

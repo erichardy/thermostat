@@ -61,6 +61,7 @@ DeviceAddress insideThermometer;
 
 // for "volatile", see https://www.youtube.com/watch?v=55YEZppz7p4
 volatile float tempT = 15.0; // Target temperature
+volatile char mode;
 #define tempStep 0.2
 
 // PLUS_PIN and MINUS_Pin are used for setting target temperature via buttons BTN1 and BTN2 buttons
@@ -159,14 +160,12 @@ void scanI2C() {
 void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
-  uint8_t sw2;
   // sw2 = digitalRead(5); // we enter in clock set mode
   if ((_millisBTN1 - lastPressBTN1) >= BTN_DELAY) {
         tempT -= tempStep ;
     }
     lastPressBTN1 = _millisBTN1;
   }
-}
 
 void btn2() {
   static unsigned long lastPressBTN2 = 0;
@@ -177,60 +176,14 @@ void btn2() {
   lastPressBTN2 = _millisBTN2;
 }
 
-
-void testRTC() {
-  // example from https://github.com/adafruit/RTClib/blob/master/examples/ds1307/ds1307.ino
-  DateTime now;
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
-    abort();
-  }
-  if (! rtc.isrunning()) {
-    Serial.println("RTC is NOT running, let's set the time!");
-    // When time needs to be set on a new device, or after a power loss, the
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  }
-  // When time needs to be re-set on a previously configured device, the
-  // following line sets the RTC to the date & time this sketch was compiled
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // This line sets the RTC with an explicit date & time, for example to set
-  // January 21, 2014 at 3am you would call:
-  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  now = rtc.now();
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.println(now.day(), DEC);
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.print(now.second(), DEC);
-  Serial.println();
-}
-
-/* We use the 6 positions switch for the 6 different modes
-*/
+/* We use the 6 positions switch for the 6 different modes */
 char getMode() {
   int16_t mode_position;
   int16_t pos;
   int16_t modes[] = {77, 184, 313, 571, 797, 965};
-  uint8_t oldSREG = SREG;
-  char mode; // short integer, 0 -> 5, for the six modes
+  // char mode;  short integer, 0 -> 5, for the six modes (volatile & global)
   // digitalRead(4) = sw1 = 0 => set tempT to one of the preset values
   mode_position = analogRead(A2);
-  
-  // volts = map(preset_position, 0, 1024, 0, 255);
-  /* Values for volts :           19  45  77 142 198 240
-     Values for preset_position : 77 184 313 571 797 965
-     Corresponding tempertures :  12  14  16  17  18  19 degrees
-  */
   for (i = 0; i < 6 ; i++) {
     pos = modes[i] - mode_position;
     if (abs(pos) < 10) {
@@ -238,20 +191,7 @@ char getMode() {
       break;
     }
   }
-  retun(i);
-  /* Serial.print(i);
-  Serial.print(" ");
-  // Serial.print(modes[i]);
-  Serial.print(" ");
-  Serial.print(mode_position);
-  Serial.print(" ");
-  Serial.println(pos); */
-  /*
-  display.setCursor(0, 51);
-  display.print(preset_position);
-  display.print(':');
-  display.println(volts);
-  */
+  return(i);
 }
 
 void setup() {
@@ -261,13 +201,19 @@ void setup() {
   pinMode(MINUS_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN1), btn1, FALLING);
   attachInterrupt(digitalPinToInterrupt(BTN2), btn2, FALLING);
+
   pinMode(HEATING_PIN, OUTPUT);
-  digitalWrite(HEATING_PIN, LOW) ;
+  digitalWrite(HEATING_PIN, LOW) ; // SSR Relay
   //
-  pinMode(A2, INPUT);
+  pinMode(A2, INPUT); // 6 positions switch with resistor dividers
   //
-  Serial.print("UINT16_MAX ");
-  Serial.println(UINT16_MAX);
+  pinMode(4, INPUT_PULLUP); // btn1
+  pinMode(5, INPUT_PULLUP); // btn2
+  pinMode(6, OUTPUT); // Yellow LED
+  pinMode(7, OUTPUT); // Blue LED
+  digitalWrite(YELLOW, LOW);
+  digitalWrite(BLUE, LOW);
+  //
   Serial.println("ok, paré...");
   Wire.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -280,7 +226,8 @@ void setup() {
   display.setCursor(0,0);
   display.println("...init...");
   display.display();
-  //
+
+  // Temp sensor
   sensors.begin();
   delay(500);
   Serial.print("Parasite power is: "); 
@@ -293,33 +240,14 @@ void setup() {
   printAddress(insideThermometer);
   Serial.println();
   sensors.setResolution(insideThermometer, TEMPERATURE_PRECISION);
+
   // RTC
   rtc.begin();
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   // set date and time at compilation time
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   /* */
-  DateTime now;
-  now = rtc.now();
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.println(now.day(), DEC);
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.print(now.second(), DEC);
-  Serial.println();
-  /* */
-
-  pinMode(4, INPUT_PULLUP);
-  pinMode(5, INPUT_PULLUP);
-  pinMode(6, OUTPUT);
-  pinMode(7, OUTPUT);
-  digitalWrite(YELLOW, LOW);
-  digitalWrite(BLUE, LOW);
+  
   delay(200);
 }
 
@@ -327,24 +255,22 @@ void loop() {
   float tempC; // Current temperature
   // int sw1, sw2;
   bool on = 1, off = 0;
-  // int volts;
+  const char *modesT[6];
+  modesT[0] = "basic mode";
+  modesT[1] = "Mode 1";
+  modesT[2] = "Mode 2";
+  modesT[3] = "Mode 3";
+  modesT[4] = "Mode 4";
+  modesT[5] = "Mode 5";
+
   DateTime now;
-  // static bool LEDon = 0;
   float _tempT;
   uint8_t oldSREG = SREG;
-  char mode;
-  /*
-  if (LEDon) {
-    led(YELLOW, on);
-  } else {
-    led(YELLOW, off);
-  }
-  LEDon = !LEDon;
-  */
+  //
   mode = getMode();
   /*
-  sw1 = digitalRead(4); // we use preset value for tempT
-  sw2 = digitalRead(5); // we enter in clock set mode
+  sw1 = digitalRead(4);
+  sw2 = digitalRead(5);
   Serial.print("sw1 : ");
   Serial.print(sw1);
   Serial.print("   sw2 : ");
@@ -355,6 +281,10 @@ void loop() {
   tempC = sensors.getTempC(insideThermometer);
   if (tempC < 0) tempC = 18.0 ;
   /* see at 13:45 https://www.youtube.com/watch?v=55YEZppz7p4 */
+  cli();
+  _tempT = tempT;
+  SREG = oldSREG;
+
   if (tempC <= (_tempT - HYSTERESIS)) {
     if (!heatingActive) {
       heating(on) ;
@@ -390,7 +320,8 @@ void loop() {
   display.print(now.second(), DEC);
   display.println();
   #endif
-  
+  display.setCursor(0, 51);
+  display.println(modesT[mode]);
   
   display.display();
   delay(200);

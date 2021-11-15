@@ -58,8 +58,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 OneWire oneWire(DS18B20_PIN);
 DallasTemperature sensors(&oneWire);
 DeviceAddress insideThermometer;
-float tempC; // Current temperature
-float tempT = 15.0; // Target temperature
+
+// for "volatile", see https://www.youtube.com/watch?v=55YEZppz7p4
+volatile float tempT = 15.0; // Target temperature
 #define tempStep 0.2
 
 // PLUS_PIN and MINUS_Pin are used for setting target temperature via buttons BTN1 and BTN2 buttons
@@ -76,13 +77,10 @@ float tempT = 15.0; // Target temperature
 #define YELLOW 6
 #define BLUE 7
 
-float preset_position;
-int volts;
-
 bool heatingActive = 0 ;
-bool LEDon = 0;
-int sw1, sw2;
-bool on = 1, off = 0;
+
+// int sw1, sw2;
+// bool on = 1, off = 0;
 int i = 0;
 int d = 0;
 
@@ -157,6 +155,7 @@ void scanI2C() {
   delay(5000);
 }
 
+// see : https://www.youtube.com/watch?v=55YEZppz7p4
 void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
@@ -213,6 +212,48 @@ void testRTC() {
   Serial.println();
 }
 
+void presetTempT() {
+  if (digitalRead(4)) {
+    return;
+  }
+  int16_t preset_position;
+  int16_t pos;
+  int16_t presets[] = {77, 184, 313, 571, 797, 965};
+  uint8_t temps[] = {12, 14, 16, 17, 18, 19};
+  uint8_t newTempT, i;
+  uint8_t oldSREG = SREG;
+  // digitalRead(4) = sw1 = 0 => set tempT to one of the preset values
+  preset_position = analogRead(A2);
+  
+  // volts = map(preset_position, 0, 1024, 0, 255);
+  /* Values for volts :           19  45  77 142 198 240
+     Values for preset_position : 77 184 313 571 797 965
+     Corresponding tempertures :  12  14  16  17  18  19 degrees
+  */
+  for (i = 0; i < 6 ; i++) {
+    pos = presets[i] - preset_position;
+    if (abs(pos) < 10) {
+      newTempT = temps[i];
+      break;
+    }
+  }
+  cli();
+  tempT = float(newTempT);
+  SREG = oldSREG;
+  /* Serial.print(i);
+  Serial.print(" ");
+  // Serial.print(presets[i]);
+  Serial.print(" ");
+  Serial.print(preset_position);
+  Serial.print(" ");
+  Serial.println(pos); */
+  /*
+  display.setCursor(0, 51);
+  display.print(preset_position);
+  display.print(':');
+  display.println(volts);
+  */
+}
 
 void setup() {
   Serial.begin(9600);
@@ -226,6 +267,8 @@ void setup() {
   //
   pinMode(A2, INPUT);
   //
+  Serial.print("UINT16_MAX ");
+  Serial.println(UINT16_MAX);
   Serial.println("ok, paré...");
   Wire.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -251,15 +294,26 @@ void setup() {
   printAddress(insideThermometer);
   Serial.println();
   sensors.setResolution(insideThermometer, TEMPERATURE_PRECISION);
-  //
-  /*
-  #ifdef X_RTC
-  delay(500);
-  Serial.println("testRTC...");
-  testRTC();
-  #endif
-  */
-  testRTC();
+  // RTC
+  rtc.begin();
+  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  // set date and time at compilation time
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  /* */
+  DateTime now;
+  now = rtc.now();
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.println(now.day(), DEC);
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+  /* */
 
   pinMode(4, INPUT_PULLUP);
   pinMode(5, INPUT_PULLUP);
@@ -267,45 +321,65 @@ void setup() {
   pinMode(7, OUTPUT);
   digitalWrite(YELLOW, LOW);
   digitalWrite(BLUE, LOW);
-  delay(500);
+  delay(200);
 }
 
 void loop() {
+  float tempC; // Current temperature
+  int sw1, sw2;
+  bool on = 1, off = 0;
+  // int volts;
   DateTime now;
-  /* */
+  // static bool LEDon = 0;
+  float _tempT;
+  uint8_t oldSREG = SREG;
+  /*
   if (LEDon) {
     led(YELLOW, on);
-    LEDon = 0;
   } else {
     led(YELLOW, off);
-    LEDon = 1;
   }
+  LEDon = !LEDon;
+  */
+  presetTempT();
+  cli();
+  _tempT = tempT;
+  SREG = oldSREG;
   /* */
-  sw1 = digitalRead(4);
-  sw2 = digitalRead(5);
+  sw1 = digitalRead(4); // we use preset value for tempT
+  sw2 = digitalRead(5); // we enter in clock set mode
   Serial.print("sw1 : ");
   Serial.print(sw1);
   Serial.print("   sw2 : ");
   Serial.println(sw2);
   /* */
   /* */
-  display.clearDisplay();
-  display.setCursor(0,0);
-
   sensors.requestTemperatures();
   tempC = sensors.getTempC(insideThermometer);
   if (tempC < 0) tempC = 18.0 ;
+  /* see at 13:45 https://www.youtube.com/watch?v=55YEZppz7p4 */
+  if (tempC <= (_tempT - HYSTERESIS)) {
+    if (!heatingActive) {
+      heating(on) ;
+    }
+  } else if (tempC >= (_tempT + HYSTERESIS)) {
+    if (heatingActive) {
+      heating(off) ;
+    }
+  }
   //
+  display.clearDisplay();
+  display.setCursor(0,0);
   display.setTextSize(2);
   display.print("T : ");
   display.println(tempC);
 
   display.print(" -> ");
   if (heatingActive) {
-    display.print(tempT);
+    display.print(_tempT);
     display.println("*");
   } else {
-    display.println(tempT);
+    display.println(_tempT);
   }
   /* */
   #ifdef X_RTC
@@ -319,27 +393,8 @@ void loop() {
   display.print(now.second(), DEC);
   display.println();
   #endif
-  /* */
-  if (tempC <= (tempT - HYSTERESIS)) {
-    if (!heatingActive) {
-      heating(on) ;
-    }
-  } else if (tempC >= (tempT + HYSTERESIS)) {
-    if (heatingActive) {
-      heating(off) ;
-    }
-  }
-  preset_position = analogRead(A2);
   
-  volts = map(preset_position, 0, 1024, 0, 255);
-  /* Values for volts :    19 45 77 142 198 240
-     Corresponding temps : 14 16 17 18  19       degrees
-  */
-  if ((volts > 190) && (volts < 210)) {
-    tempT = 19;
-  }
-  display.setCursor(0, 51);
-  display.println(volts);
+  
   display.display();
-  delay(800);
+  delay(200);
 }

@@ -64,6 +64,7 @@ volatile float tempT = 15.0; // Target temperature
 volatile float tempStep = 0.2;
 
 volatile char mode;
+volatile bool timeUpdatedPlus, timeUpdatedMinus;
 
 // PLUS_PIN and MINUS_Pin are used for setting target temperature via buttons BTN1 and BTN2 buttons
 #define PLUS_PIN 3
@@ -129,8 +130,11 @@ void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
   if ((_millisBTN1 - lastPressBTN1) >= BTN_DELAY) {
-    if (mode == 0) {
+    if (mode < 3) {
         tempT -= tempStep ;
+    }
+    if (mode == 5) {
+      timeUpdatedMinus = 1;
     }
     lastPressBTN1 = _millisBTN1;
   }
@@ -139,12 +143,43 @@ void btn1() {
 void btn2() {
   static unsigned long lastPressBTN2 = 0;
   unsigned long _millisBTN2 = millis();
+  DateTime now;
   if ((_millisBTN2 - lastPressBTN2) >= BTN_DELAY) {
-    if (mode == 0) {
+    if (mode < 3) {
       tempT += tempStep ;
       }
+    if (mode == 5) {
+      timeUpdatedPlus = 1;
+    }
     lastPressBTN2 = _millisBTN2;
   }
+}
+
+void timeUpdate(bool PlusOrMinus) {
+  uint8_t oldSREG = SREG;
+  DateTime now;
+  uint8_t sw1, sw2, h, m, s;
+  sw1 = digitalRead(4);
+  sw2 = digitalRead(5);
+  //
+  now = rtc.now();
+  h = now.hour();
+  m = now.minute();
+  s = now.second();
+  if (!sw2) { // Hours  
+    if (PlusOrMinus) {h++; led(BLUE, 1);} else {h--; led(YELLOW, 1);}
+  }
+  if (!sw1) { // minutes
+    if (PlusOrMinus) {m++; led(BLUE, 1);} else {m--; led(YELLOW, 1);}
+  }
+  //
+  rtc.adjust(DateTime(2021, 12, 31, h, m, s));
+  cli();
+  timeUpdatedPlus = 0;
+  timeUpdatedMinus = 0;
+  SREG = oldSREG;
+  led(BLUE, 0);
+  led(YELLOW, 0);
 }
 
 /* We use the 6 positions switch for the 6 different modes */
@@ -157,11 +192,17 @@ char getMode() {
   mode_position = analogRead(A2);
   for (i = 0; i < 6 ; i++) {
     pos = modes[i] - mode_position;
-    if (abs(pos) < 10) {
+    if (abs(pos) < 30) {
       mode = i;
       break;
     }
+    
   }
+  if (i == 6) {
+    Serial.print(pos);
+    Serial.print(" ");
+    Serial.println(mode_position);
+    }
   return(i);
 }
 
@@ -214,9 +255,11 @@ void setup() {
 
   // RTC
   rtc.begin();
+  timeUpdatedPlus = 0;
+  timeUpdatedMinus = 0;
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   // set date and time at compilation time
-  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   /* */
   delay(200);
 }
@@ -245,23 +288,30 @@ void loop() {
       if (!sw1) {tempStep = 0.2; led(YELLOW, 1);led(BLUE, 0);}
       if (sw1 && sw2) {tempStep = 0.5; led(YELLOW, 0);led(BLUE, 0);}
       break;
-    /*
     case 1:
+      // 14 Deg
+      tempT = 14.0;
       break;
     case 2:
+      // 19 Deg
+      tempT = 19.0;
       break;
+    /*
     case 3:
+      // prog 1
       break;
     case 4:
+      // prog 2
       break;
-    // time setting
     case 5:
+      // clock setting
       break;
       */
     default:
       {tempStep = 0.2; led(YELLOW, 0);led(BLUE, 0);}
       break;
   }
+
   /* */
   sensors.requestTemperatures();
   tempC = sensors.getTempC(insideThermometer);
@@ -278,6 +328,14 @@ void loop() {
   } else if (tempC >= (_tempT + HYSTERESIS)) {
     if (heatingActive) {
       heating(off) ;
+    }
+  }
+  //
+  if (timeUpdatedPlus || timeUpdatedMinus) {
+    if (timeUpdatedPlus) {
+      timeUpdate(1);
+    } else {
+      timeUpdate(0);
     }
   }
   //

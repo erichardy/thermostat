@@ -125,6 +125,14 @@ void led(int LEDcolor, bool onOff) {
   }
 }
 
+void blinkLeds() {
+  led(BLUE, 1);
+  led(YELLOW, 1);
+  delay(100);
+  led(BLUE, 0);
+  led(YELLOW, 0);
+}
+
 // see : https://www.youtube.com/watch?v=55YEZppz7p4
 void btn1() {
   static unsigned long lastPressBTN1 = 0;
@@ -257,11 +265,12 @@ void setup() {
   rtc.begin();
   timeUpdatedPlus = 0;
   timeUpdatedMinus = 0;
-  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  // ex. rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   // set date and time at compilation time
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   /* */
   delay(200);
+  blinkLeds();
 }
 
 void loop() {
@@ -296,7 +305,6 @@ void loop() {
       // 19 Deg
       tempT = 19.0;
       break;
-    /*
     case 3:
       // prog 1
       break;
@@ -306,7 +314,6 @@ void loop() {
     case 5:
       // clock setting
       break;
-      */
     default:
       {tempStep = 0.2; led(YELLOW, 0);led(BLUE, 0);}
       break;
@@ -331,13 +338,8 @@ void loop() {
     }
   }
   //
-  if (timeUpdatedPlus || timeUpdatedMinus) {
-    if (timeUpdatedPlus) {
-      timeUpdate(1);
-    } else {
-      timeUpdate(0);
-    }
-  }
+  if (timeUpdatedPlus) {timeUpdate(1); }
+  if (timeUpdatedMinus) {timeUpdate(0); }
   //
   display.clearDisplay();
   display.setCursor(0,0);
@@ -352,7 +354,6 @@ void loop() {
   } else {
     display.println(_tempT);
   }
-  /* */
   /* */
   #ifdef X_RTC
   display.setTextSize(2);

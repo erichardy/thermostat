@@ -138,7 +138,7 @@ void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
   if ((_millisBTN1 - lastPressBTN1) >= BTN_DELAY) {
-    if (mode < 3) {
+    if (mode < 4) {
         tempT -= tempStep ;
     }
     if (mode == 5) {
@@ -153,7 +153,7 @@ void btn2() {
   unsigned long _millisBTN2 = millis();
   DateTime now;
   if ((_millisBTN2 - lastPressBTN2) >= BTN_DELAY) {
-    if (mode < 3) {
+    if (mode < 4) {
       tempT += tempStep ;
       }
     if (mode == 5) {
@@ -190,6 +190,35 @@ void timeUpdate(bool PlusOrMinus) {
   led(YELLOW, 0);
 }
 
+void prog1() {
+  static unsigned long lastChange = 0;
+  unsigned long _millis = millis();
+  const uint8_t nb_values = 2;
+  /*
+  Serial.print(lastChange);
+  Serial.print(" ");
+  Serial.println(_millis);
+  */
+  if ((_millis - lastChange) < 60000) return ;
+
+  // const float prog1Times[]   = {5.10, 6.50, 11.0, 14.0, 19.0, 22.0};
+  // const float prog1Degrees[] = {19.0, 17.0, 19.0, 17.0, 19.0, 16.5};
+  // below, for tests
+  const float prog1Times[]   = {0.29, 0.31};
+  const float prog1Degrees[] = {19.0, 17.0};
+  float xTime;
+  DateTime now;
+  now = rtc.now();
+  xTime = now.hour() + (now.minute() / 100.0);
+  // Serial.println(xTime);
+  for (uint8_t i = 0; i < nb_values; i++) {
+    if (xTime == prog1Times[i]) {
+      tempT = prog1Degrees[i];
+      lastChange = _millis;
+    }
+  }
+}
+
 /* We use the 6 positions switch for the 6 different modes */
 char getMode() {
   int16_t mode_position;
@@ -204,7 +233,6 @@ char getMode() {
       mode = i;
       break;
     }
-    
   }
   if (i == 6) {
     Serial.print(pos);
@@ -307,6 +335,7 @@ void loop() {
       break;
     case 3:
       // prog 1
+      prog1();
       break;
     case 4:
       // prog 2

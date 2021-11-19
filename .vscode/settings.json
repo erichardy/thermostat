@@ -1,2 +1,7 @@
 {
+    "AVR.source.compiler": "/Users/hardy/.platformio/packages/toolchain-atmelavr/bin/avr-gcc",
+    "AVR.programmer.tool": "/Users/hardy/.platformio/packages/tool-avrdude/bin/avrdude",
+    "AVR.programmer.definitions": "/Users/hardy/.platformio/packages/tool-avrdude/avrdude.conf",
+    "AVR.source.libraries": [],
+    "AVR.programmer.type": "arduinoisp"
 }

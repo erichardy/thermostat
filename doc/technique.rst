@@ -4,4 +4,4 @@ Documentation technique
 =======================
 
 
-dfgrhrt
+:index:`thermostat`

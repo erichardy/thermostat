@@ -3,16 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. un exemple de doc : /Users/hardy/SSD/Dev-OLD/ubl.tebl/docs
-
 .. include:: links.rst
 
 =================
 Un thermostat DIY
 =================
-
-Documentation est réalisée avec `Sphinx`_, `SphinxAutobuild`_ est aussi mis en oeuvre...
-
 
 .. toctree::
    :maxdepth: 2
@@ -20,10 +15,11 @@ Documentation est réalisée avec `Sphinx`_, `SphinxAutobuild`_ est aussi mis en
 
    Documentation utilisateur <utilisateur>
    Documentation technique <technique>
+   Réalisation de ce document <redaction>
 
 
-Indices and tables
-==================
+Indexes et tables
+=================
 
 * :ref:`genindex`
 * :ref:`modindex`

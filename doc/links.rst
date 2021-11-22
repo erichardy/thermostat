@@ -8,5 +8,7 @@
 
 .. _SnipsetsDansVSC: https://docs.typo3.org/m/typo3/docs-how-to-document/master/en-us/ToolsEditRest/Index.html
 
-.. Commentaire
+.. _reStructuredText Syntax highlighting: https://github.com/trond-snekvik/vscode-rst#readme
+
+.. un exemple de doc : /Users/hardy/SSD/Dev-OLD/ubl.tebl/docs
 

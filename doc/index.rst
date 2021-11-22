@@ -11,7 +11,7 @@
 Un thermostat DIY
 =================
 
-Documentation est réalisée avec `Sphinx`_, et avec l'outil `SphinxAutobuild`_
+Documentation est réalisée avec `Sphinx`_, `SphinxAutobuild`_ est aussi mis en oeuvre...
 
 
 .. toctree::

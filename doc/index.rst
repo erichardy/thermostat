@@ -11,17 +11,31 @@ Un thermostat DIY
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contenu :
 
    Documentation utilisateur <utilisateur>
    Documentation technique <technique>
    Réalisation de ce document <redaction>
 
 
+Résumé
+======
+
+En remplacement d'un thermnostat ordinaire à bi-lames, réalisation d'un thermostat un peu plus évolué basé
+sur un arduino UNO.
+
+Les fonctionalités recherchées :
+
+* une meilleure lecture du fonctionnement de la pompe à chaleur
+* une visualisation plus claire et plus précise de la température de la pièce
+* une visualisation plus claire et plus précise de la température demandée
+* quelques pré-réglages
+* une programmation en fonction des heures de la journée.
+
+
 Indexes et tables
 =================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
 

@@ -15,11 +15,11 @@
 
 .. _dépôt sur github: https://github.com/erichardy/thermostat
 
-.. un exemple de doc : /Users/hardy/SSD/Dev-OLD/ubl.tebl/docs
+.. un exemple de doc : cd ~/SSD/Dev-OLD/ubl.tebl/docs
 
 
 .. sphinx-autobuild . ./_build/html
 
 .. http://127.0.0.1:8000
 
-.. /Users/hardy/Documents/PlatformIO/Projects/thermostat
+.. cd ~/Documents/PlatformIO/Projects/thermostat

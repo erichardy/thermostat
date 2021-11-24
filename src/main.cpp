@@ -1,3 +1,5 @@
+/*! @file main.cpp */
+
 /*
 multiple OLED displays withnthe same adress :
 Multiple OLED SSD1306 Displays using 2IC : https://forum.arduino.cc/index.php?topic=248663.0
@@ -60,7 +62,7 @@ DallasTemperature sensors(&oneWire);
 DeviceAddress insideThermometer;
 
 // for "volatile", see https://www.youtube.com/watch?v=55YEZppz7p4
-volatile float tempT = 15.0; // Target temperature
+volatile float tempT = 15.0; /*!< Target temperature */
 volatile float tempStep = 0.2;
 
 volatile char mode;
@@ -73,8 +75,8 @@ volatile bool timeUpdatedPlus, timeUpdatedMinus;
 #define BTN2 2
 
 #define BTN_DELAY 300
-#define HEATING_PIN 8 // relay pin
-#define HEATING_DELAY 40000000 // 40000000 uSec = 40sec.
+#define HEATING_PIN 8 /*!< relay pin */
+#define HEATING_DELAY 40000000 /*!< 40000000 uSec = 40sec. */
 #define HYSTERESIS .2
 // LEDs
 #define YELLOW 6
@@ -133,7 +135,13 @@ void blinkLeds() {
   led(YELLOW, 0);
 }
 
-// see : https://www.youtube.com/watch?v=55YEZppz7p4
+/**
+ * @brief Gestion du bouton poussoir connecté à MINUS_PIN == 2
+ *
+ * @author Eric Hardy
+ * 
+ * see : https://www.youtube.com/watch?v=55YEZppz7p4
+ */
 void btn1() {
   static unsigned long lastPressBTN1 = 0;
   unsigned long _millisBTN1 = millis();
@@ -219,7 +227,10 @@ void prog1() {
   }
 }
 
-/* We use the 6 positions switch for the 6 different modes */
+/**
+ * @brief We use the 6 positions switch for the 6 different modes
+ * 
+ */
 char getMode() {
   int16_t mode_position;
   int16_t pos;

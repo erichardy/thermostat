@@ -48,13 +48,55 @@ Les N° ci-dessous des éléments correspondent aux N° de la photo ci-dessus.
 Le rôle de l'arduino NANO
 =========================
 
+Rôles INPUT
+
+1. capter la température de la pièce avec la sonde DS18B20
+2. Déterminer le mode de fonctionnement avec le commutateur 6 positions (**12**)
+3. gérer les commandes des réglages avec les boutons poussoirs et le commutateur 3 positions (**17**)
+
+Rôles OUTPUT
+
+1. Rôle principal : **Activer/Désactiver le relai SSR**
+2. afficher les données sur l'écran OLED (**16**)
+3. allumer/éteindre les LED bleue et jaune
+4. Plus tard : transmettre les données par le bus SPI (**20**)
+
+Les interruptions
+=================
+
+Les interruptions sont gérées sur les *Digital Pins* 2 et 3. Elles sont utilisées pour les
+réglages divers : température de consigne, heure.
+
+Deux particularités :
+
+* un algorithme pour s'affranchir des rebonds. Voir pour cela la vidéo
+  d'Eric Peronnin dont l'URL est donnée dans le code au niveau
+  de la fonction :code:`btn1()` et ``blabla``
+* l'appui sur les boutons poussoirs n'a pas le même effet selon le mode. Pour toujours
+  les modes sauf le **5**, on modifie la température de consigne, pour le mode **5**,
+  on modifie les heures et les minutes.
+
+
+::
+
+  void setup() {
+    ...
+    pinMode(PLUS_PIN, INPUT_PULLUP);
+    pinMode(MINUS_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(BTN1), btn1, FALLING);
+    attachInterrupt(digitalPinToInterrupt(BTN2), btn2, FALLING);
+    ...
+
 
 le module RTC
 =============
 
 
+
 le relai SSR et la connectique
 ==============================
+
+
 
 
 La sonde DS18B20 et sa connectique
@@ -78,7 +120,3 @@ les interruptions
 
 les hystérésis : de temps et de température
 
-
-
-
-:index:`thermostat`

@@ -15,6 +15,10 @@
 
 .. _dépôt sur github: https://github.com/erichardy/thermostat
 
+.. In-system programming (ISP), or also called in-circuit serial programming (ICSP)
+.. _Arduino as ISP and Arduino Bootloaders: https://www.arduino.cc/en/Tutorial/BuiltInExamples/ArduinoISP
+.. _Upload using Programmer: https://docs.platformio.org/en/latest/platforms/atmelavr.html?highlight=isp#upload-using-programmer
+
 .. un exemple de doc : cd ~/SSD/Dev-OLD/ubl.tebl/docs
 
 

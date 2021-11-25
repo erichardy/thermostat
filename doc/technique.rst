@@ -163,11 +163,100 @@ sont données dans le tableau ci-dessous :
   | **valeurs lues** (A2) | 77  | 184 | 313 | 571   | 797   | 965 |
   +-----------------------+-----+-----+-----+-------+-------+-----+
 
+C'est la fonction ``char getMode()`` qui permet d'obtenir le mode de fonctionnement sélectionné
+par le commutateur 6 positions.
+
+  .. note:: il se trouve que l'on obtient parfois un mode égal à **6**. Il semble que ce soit du
+    à des contacts imparfaits du commutateur. Cependant, cela ne semble pas porter à conséquence
+    car la valeur **6** de ce mode semble être très furtive.
+
 
 Mise-à-jour du programme de l'arduino via ISP/ICSP
 ==================================================
 
+  .. note:: À la date où sont écrites ces lignes (25/11/2021), des essais restent encore à mener sur la mise à jour du programme
+    de l'arduino via une méthode ISP/ICSP. Les essais *sur banc* semblent concluants, mais c'est à valider
+    dans l'avenir.
 
+  .. note:: In-system programming (ISP), or also called in-circuit serial programming (ICSP)
+
+L'idée est d'utiliser un arduino UNO dédié comme ISP : voir les documentations
+
+* `Arduino as ISP and Arduino Bootloaders`_
+* `Upload using Programmer`_ d'où est récupérée la tâche d'upload ci-dessous
+
+
+
+Méthode appliquée :
+
+* un arduino UNO est configuré comme ISP avec le croquis livré avec l'IDE arduino nommé *ArduinoISP*
+* les broches 10 à 13, 5V et GND de l'UNO sont reliées au connecteur RJ45 via un câble réseau *recyclé*
+* une connectique est mise en place entre l'arduino NANO et le connecteur RJ45 femelle (**20**) de la face avant
+* une tâche de PlatformIO est configurée dans platformio.ini (cf ci-dessous)
+* le transfert du programme vers de NANO est réalisé à l'aide de cette tâche, l'arduino UNO étant relié à
+  l'ordinateur par USB.
+
+
+La tâche d'upload configurée dans platformio :
+
+::
+
+  [env:program_via_ArduinoISP]
+  platform = atmelavr
+  framework = arduino
+  board = nanoatmega328
+  lib_deps = ${extra_libs.lib_deps}
+  ; upload_protocol = custom
+  upload_protocol = arduinoisp
+  upload_port = /dev/cu.wchusbserialfd130
+  upload_speed = 19200
+  upload_flags =
+      -C
+      ; use "tool-avrdude-megaavr" for the atmelmegaavr platform
+      ${platformio.packages_dir}/tool-avrdude/avrdude.conf
+      -p
+      $BOARD_MCU
+      -P
+      $UPLOAD_PORT
+      -b
+      $UPLOAD_SPEED
+      -c
+      stk500v1
+  upload_command = avrdude $UPLOAD_FLAGS -U flash:w:$SOURCE:i
+
+
+Le tableau ci-dessous donne les correspondances entre les couleurs des fils (à l'intérieur du boîtier)
+qui relient l'arduino NANO à
+la connectique RJ45 et et les correspondances avec les broches de l'arduino
+UNO (N° de broches 10, 11, 12, 13, +Vcc et GND)
+
++-----+-------------------+-------+------+------+------+-----+-------------------+
+| UNO | couleurs des fils | NANO  | NANO | NANO | NANO | UNO | couleurs des fils |
++=====+===================+=======+======+======+======+=====+===================+
+| 12  |   Rose	          | MISO  |   1	 |  2   | +Vcc | +5V |    Marron         |
++-----+-------------------+-------+------+------+------+-----+-------------------+
+| 13  |  Blanc	          | SCK   |   3  |   4  | MOSI |  11 |     Vert          |
++-----+-------------------+-------+------+------+------+-----+-------------------+
+| 10  |   Gris	          | Reset |   5  |   6  |  GND | GND |     Bleu          |
++-----+-------------------+-------+------+------+------+-----+-------------------+
+
+Le tableau ci-dessous donne les correspondances dans la connectique entre RJ45, UNO/ISP et NANO/thermostat :
+
++--------------+-------------+-----------------------------+
+| RJ45         | UNO (ISP)   | NANO (par ICSP), thermostat |
++==============+=============+=============================+
+| Blanc/Marron | Rose - 12   | MISO - Rose - 1             |
++--------------+-------------+-----------------------------+
+| Marron       |Marron - Vcc | Vcc - Marron - 2            |
++--------------+-------------+-----------------------------+
+| Blanc/Vert   | Blanc - 13  |SCK - Blanc - 3              |
++--------------+-------------+-----------------------------+
+| Blanc/Bleu   | Vert - 11   | MOSI - Vert - 4             |
++--------------+-------------+-----------------------------+
+| Vert         | Gris - 10   | Reset - Gris - 5            |
++--------------+-------------+-----------------------------+
+| Bleu         | Bleu - GND  | GND - Bleu - 6              |
++--------------+-------------+-----------------------------+
 
 
 Détails à propos du sketch de l'arduino

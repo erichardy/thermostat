@@ -18,8 +18,9 @@
 .. un exemple de doc : cd ~/SSD/Dev-OLD/ubl.tebl/docs
 
 
+.. cd ~/Documents/PlatformIO/Projects/thermostat
+
 .. sphinx-autobuild . ./_build/html
 
 .. http://127.0.0.1:8000
 
-.. cd ~/Documents/PlatformIO/Projects/thermostat

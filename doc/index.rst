@@ -22,11 +22,11 @@ Résumé
 ======
 
 En remplacement d'un thermnostat ordinaire à bi-lames, réalisation d'un thermostat un peu plus évolué basé
-sur un arduino UNO.
+sur un arduino NANO.
 
 Les fonctionalités recherchées :
 
-* une meilleure lecture du fonctionnement de la pompe à chaleur
+* une meilleure lecture du fonctionnement de la pompe à chaleur (:index:`PAC`)
 * une visualisation plus claire et plus précise de la température de la pièce
 * une visualisation plus claire et plus précise de la température demandée
 * quelques pré-réglages

@@ -301,6 +301,10 @@ void setup() {
   /* */
   delay(200);
   blinkLeds();
+  delay(500);
+  blinkLeds();
+  delay(500);
+  blinkLeds();
 }
 
 void loop() {

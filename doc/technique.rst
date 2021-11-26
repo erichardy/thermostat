@@ -22,7 +22,7 @@ Photo de l'intérieur du thermostat
 Liste des éléments
 ==================
 
-Les N° ci-dessous des éléments correspondent aux N° de la photo ci-dessus.
+Les N° de la liste des éléments ci-dessous correspondent aux N° des composants de la photo ci-dessus.
 
 1. :index:`Arduino` NANO
 2. Module :index:`RTC` (:index:`I2C`) **DS1307**
@@ -43,7 +43,7 @@ Les N° ci-dessous des éléments correspondent aux N° de la photo ci-dessus.
 17. commutateur 3 positions
 18. LED jaune (non visible sur cette photo)
 19. LED bleue (à peine visible sur cette photo)
-20. PCB de récupération avec le connecteur RJ45 pour les m-à-j de l'arduino via ISP/ICSP
+20. PCB de récupération avec un connecteur RJ45 pour les m-à-j de l'arduino NANO interne via ISP/ICSP
 
 Le rôle de l'arduino NANO
 =========================
@@ -193,7 +193,7 @@ Méthode appliquée :
 * les broches 10 à 13, 5V et GND de l'UNO sont reliées au connecteur RJ45 via un câble réseau *recyclé*
 * une connectique est mise en place entre l'arduino NANO et le connecteur RJ45 femelle (**20**) de la face avant
 * une tâche de PlatformIO est configurée dans platformio.ini (cf ci-dessous)
-* le transfert du programme vers de NANO est réalisé à l'aide de cette tâche, l'arduino UNO étant relié à
+* le transfert du programme vers le NANO est réalisé à l'aide de cette tâche, l'arduino UNO étant relié à
   l'ordinateur par USB.
 
 
@@ -227,18 +227,18 @@ La tâche d'upload configurée dans platformio :
 
 Le tableau ci-dessous donne les correspondances entre les couleurs des fils (à l'intérieur du boîtier)
 qui relient l'arduino NANO à
-la connectique RJ45 et et les correspondances avec les broches de l'arduino
+la connectique RJ45 et les correspondances avec les broches de l'arduino
 UNO (N° de broches 10, 11, 12, 13, +Vcc et GND)
 
-+-----+-------------------+-------+------+------+------+-----+-------------------+
-| UNO | couleurs des fils | NANO  | NANO | NANO | NANO | UNO | couleurs des fils |
-+=====+===================+=======+======+======+======+=====+===================+
-| 12  |   Rose	          | MISO  |   1	 |  2   | +Vcc | +5V |    Marron         |
-+-----+-------------------+-------+------+------+------+-----+-------------------+
-| 13  |  Blanc	          | SCK   |   3  |   4  | MOSI |  11 |     Vert          |
-+-----+-------------------+-------+------+------+------+-----+-------------------+
-| 10  |   Gris	          | Reset |   5  |   6  |  GND | GND |     Bleu          |
-+-----+-------------------+-------+------+------+------+-----+-------------------+
++-----+-------------------+-----------+-------------+----------+-------------+-----+-------------------+
+| UNO | couleurs des fils | SPI/NANO  | ICSP/NANO   | ICSP/NANO|    SPI/NANO | UNO | couleurs des fils |
++=====+===================+===========+=============+==========+=============+=====+===================+
+| 12  |   Rose	          | MISO      |         1   |       2  |        +Vcc | +5V |    Marron         |
++-----+-------------------+-----------+-------------+----------+-------------+-----+-------------------+
+| 13  |  Blanc	          | SCK       |          3  |       4  |        MOSI |  11 |     Vert          |
++-----+-------------------+-----------+-------------+----------+-------------+-----+-------------------+
+| 10  |   Gris	          | Reset     |          5  |       6  |         GND | GND |     Bleu          |
++-----+-------------------+-----------+-------------+----------+-------------+-----+-------------------+
 
 Le tableau ci-dessous donne les correspondances dans la connectique entre RJ45, UNO/ISP et NANO/thermostat :
 
@@ -259,12 +259,104 @@ Le tableau ci-dessous donne les correspondances dans la connectique entre RJ45, 
 +--------------+-------------+-----------------------------+
 
 
+
+
 Détails à propos du sketch de l'arduino
 =======================================
 
+Liste des broches utilisées de l'arduino NANO dans le boitier
+-------------------------------------------------------------
+
+::
+
+  Digital pins
+  2 : Btn1, minus button for settings
+  3 : Btn2, plus button for settings
+  4 : 3 positions switch, temperatures presets
+  5 : 3 positions switch, time settings
+  6 : yellow LED
+  7 : blue LED
+  8 : Relay (HEATING)
+  9 : DS18B20 (temperature, One Wire)
+
+  Analog pins
+  A2 : presets, 6 positions switch
+  A4 : SDA (I2C)
+  A5 : SCL (I2C)
+
+
 Organisation du sketch
+----------------------
 
-les interruptions
+Malgré les quelques 400 lignes, ce programme est assez *simple* :
 
-les hystérésis : de temps et de température
+l'essentiel tourne autour de 2 variables
+
+* ``tempT`` : Target Temperature, température de consigne
+* ``tempC`` : Current Temperature, température relevée à la sonde DS18B20
+
+
+** Si la température de consigne est supérieure à la température mesurée, on déclenche la PAC.
+A l'inverse, on stoppe la demande de chauffage à la PAC.**
+
+
+  .. note::
+
+    Voir ci-dessous le paragraphe sur les hystéresis
+
+
+Les interruptions
+-----------------
+
+Les deux interruptions disponnibles sont utilisées pour les réglages. Il a donc fallu prendre
+quelques précautions telles qu'elles sont données dans une vidéo d'Eric Peronnin à ce sujet :
+
+`Interruptions et variables partagées - Utiliser volatile, cli, sei, SREG`_
+
+C'est pourquoi on trouvera à plusieurs endroits dans le code les instructions suivantes :
+
+::
+
+  float _tempT;
+  uint8_t oldSREG = SREG;
+  ...
+  cli();
+  _tempT = tempT;
+  SREG = oldSREG;
+
+
+Les mécanismes de protection contre les rebonds mis en oeuvre dans les fonctions ``btn1()`` et
+``btn2()`` sont aussi issus de recommandations d'Eric Peronnin : `Eviter les rebonds`_
+
+
+Les hystérésis : de temps et de température
+-------------------------------------------
+
+Pour éviter des fonctionnements hératiques, des mécanismes d'`hystérésis`_ sont mis en oeuvre :
+
+* **délai entre deux actions sur le relai** afin d'éviter *mettre en action* / *stopper* la PAC de façon
+  rapide lors, par exemple des réglages de la température de consigne. Ce délai, actuellement de **40 secondes**,
+  a pour effet, si on fait monter ou descendre la température de consigne rapidement, la PAC ne sera
+  pas impactée.
+* **l'hystérésis de température**, actuellement de **0.2°**, a pour effet d'ignorer les variations rapides des
+  mesures retournées par la sonde DS18B20. Cela a pour effet qu'à une température de consigne de 18°, la PAC
+  ne sera activée que si la température ambiante est inférieure ou égale à 17.8°, et elle ne sera stoppée
+  que quand la température ambiante aura atteint 18.2°.
+
+  .. note:: l'avantage d'avoir un affichage des température au 0.01° près ne réside pas dans la connaissance
+    de cette température avec une telle précision (c'est inutile dans la pratique), mais permet de visualiser
+    les variations parfois rapides des températures fourniées par la sonde, ce qui justifie la mise en place de cet
+    hystérésis et a permis d'en ajuster la valeur.
+
+
+TODO
+====
+
+Re-configurer les programmes de chauffage en fonction des heures. Actuellement, seulement le mode 3 est configfurer
+et faut le valider... puis déterminer un autre programme. C'est l'expérience et le temps qui vont permettre
+de trouver un programme utile...
+
+utiliser le bus SPI pour envoyer les données vers un équipement tiers afin de mieux cerner le
+fonctionnement général du système de chauffage. Par exemple, connaître le séquencement des
+allumage/extinction de la PAC en fonction des variations de température.
 

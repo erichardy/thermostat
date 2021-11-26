@@ -18,6 +18,11 @@
 .. In-system programming (ISP), or also called in-circuit serial programming (ICSP)
 .. _Arduino as ISP and Arduino Bootloaders: https://www.arduino.cc/en/Tutorial/BuiltInExamples/ArduinoISP
 .. _Upload using Programmer: https://docs.platformio.org/en/latest/platforms/atmelavr.html?highlight=isp#upload-using-programmer
+.. _Broche ICSP, qu'est-ce que c'est?: https://qastack.fr/arduino/40098/icsp-pin-what-is-it-actually
+.. _Interruptions et variables partagées - Utiliser volatile, cli, sei, SREG: https://www.youtube.com/watch?v=55YEZppz7p4
+.. _Eviter les rebonds: https://www.youtube.com/watch?v=ftdqUflYG3Y&list=PLuQznwVAhY2V7Uh0aHOgBvaiqRw9VeCis&index=9&t=520s
+
+.. _hystérésis: https://fr.wikipedia.org/wiki/Hyst%C3%A9r%C3%A9sis
 
 .. un exemple de doc : cd ~/SSD/Dev-OLD/ubl.tebl/docs
 

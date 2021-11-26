@@ -75,11 +75,26 @@ mode 3 : programme 1
 Le programme des températures au cours de la journée en fonction de l'heure ne peut être modifiée que
 par une m-à-j du programme de l'arduino.
 
+Un exemple à tester et/ou à valider :
+
++------------+------+------+------+------+------+------+
+|heures      | 5.10 | 6.50 | 11.0 | 14.0 | 19.0 | 22.0 |
++------------+------+------+------+------+------+------+
+|Températures| 19.0 | 17.0 | 19.0 | 17.0 | 19.0 | 16.5 |
++------------+------+------+------+------+------+------+
+
+    .. note:: les heures sont notées ici de façon un peu particulières, ces valeurs
+        sont tirées du programme de l'arduino NANO. *5.10* = 5h et 10mn. *6.50* = 6h et 50mn.
+
+
+
 mode 4 : programme 2
 --------------------
 
 Le programme des températures au cours de la journée en fonction de l'heure ne peut être modifiée que
 par une m-à-j du programme de l'arduino.
+
+Actuellement (25/11/2021), ce mode n'est pas programmé.
 
 
 mode 5 : réglage de l'heure

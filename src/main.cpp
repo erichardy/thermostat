@@ -1,20 +1,7 @@
 /*! @file main.cpp */
 
-/*
-multiple OLED displays withnthe same adress :
-Multiple OLED SSD1306 Displays using 2IC : https://forum.arduino.cc/index.php?topic=248663.0
-https://bitbanksoftware.blogspot.com/2019/01/controlling-lots-of-oled-displays-with.html
-https://randomnerdtutorials.com/guide-for-oled-display-with-arduino/
-TCA9548A I2C Multiplexer : https://www.youtube.com/watch?v=vV42fCpmCFg
-*/
-/*
-Alemiorations a apporter :
-1- 3 temperatures prereglees : 14, 17, 19 et des boutons pour y acceder directement
-2- un interrupteur marche/arret sur le PCB
-
-*/
-/*
-Pinout summary :
+/**
+ * @brief Pinout summary :
 Digital pins
 2 : Btn1, minus button for settings
 3 : Btn2, plus button for settings
@@ -171,6 +158,11 @@ void btn2() {
   }
 }
 
+/**
+ * @brief Mise à jour des heures et minutes
+ * 
+ * @param PlusOrMinus 
+ */
 void timeUpdate(bool PlusOrMinus) {
   uint8_t oldSREG = SREG;
   DateTime now;
@@ -209,11 +201,11 @@ void prog1() {
   */
   if ((_millis - lastChange) < 60000) return ;
 
-  // const float prog1Times[]   = {5.10, 6.50, 11.0, 14.0, 19.0, 22.0};
-  // const float prog1Degrees[] = {19.0, 17.0, 19.0, 17.0, 19.0, 16.5};
+  const float prog1Times[]   = {5.10, 6.50, 11.0, 14.0, 19.0, 22.0};
+  const float prog1Degrees[] = {19.0, 17.0, 19.0, 17.0, 19.0, 16.5};
   // below, for tests
-  const float prog1Times[]   = {0.29, 0.31};
-  const float prog1Degrees[] = {19.0, 17.0};
+  // const float prog1Times[]   = {0.29, 0.31};
+  // const float prog1Degrees[] = {19.0, 17.0};
   float xTime;
   DateTime now;
   now = rtc.now();
@@ -236,7 +228,6 @@ char getMode() {
   int16_t pos;
   int16_t modes[] = {77, 184, 313, 571, 797, 965};
   // char mode;  short integer, 0 -> 5, for the six modes (volatile & global)
-  // digitalRead(4) = sw1 = 0 => set tempT to one of the preset values
   mode_position = analogRead(A2);
   for (i = 0; i < 6 ; i++) {
     pos = modes[i] - mode_position;
@@ -413,3 +404,12 @@ void loop() {
   display.display();
   delay(200);
 }
+
+
+/* informations annexes :
+multiple OLED displays withnthe same adress :
+Multiple OLED SSD1306 Displays using 2IC : https://forum.arduino.cc/index.php?topic=248663.0
+https://bitbanksoftware.blogspot.com/2019/01/controlling-lots-of-oled-displays-with.html
+https://randomnerdtutorials.com/guide-for-oled-display-with-arduino/
+TCA9548A I2C Multiplexer : https://www.youtube.com/watch?v=vV42fCpmCFg
+*/

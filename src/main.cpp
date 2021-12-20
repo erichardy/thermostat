@@ -34,6 +34,7 @@ DateTime now;
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#define INIT "maj 20/12/21\n17h12"
 // see https://github.com/adafruit/Adafruit_SSD1306/blob/master/examples/ssd1306_128x32_i2c/ssd1306_128x32_i2c.ino
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -148,7 +149,7 @@ void btn2() {
   unsigned long _millisBTN2 = millis();
   DateTime now;
   if ((_millisBTN2 - lastPressBTN2) >= BTN_DELAY) {
-    if (mode < 4) {
+    if (mode < 5) {
       tempT += tempStep ;
       }
     if (mode == 5) {
@@ -194,23 +195,63 @@ void prog1() {
   static unsigned long lastChange = 0;
   unsigned long _millis = millis();
   const uint8_t nb_values = 2;
-  /*
-  Serial.print(lastChange);
-  Serial.print(" ");
-  Serial.println(_millis);
-  */
+
   if ((_millis - lastChange) < 60000) return ;
 
   const float prog1Times[]   = {5.10, 6.50, 11.0, 14.0, 19.0, 22.0};
   const float prog1Degrees[] = {19.0, 17.0, 19.0, 17.0, 19.0, 16.5};
-  // below, for tests
-  // const float prog1Times[]   = {0.29, 0.31};
-  // const float prog1Degrees[] = {19.0, 17.0};
+
   float xTime;
   DateTime now;
   now = rtc.now();
   xTime = now.hour() + (now.minute() / 100.0);
-  // Serial.println(xTime);
+  for (uint8_t i = 0; i < nb_values; i++) {
+    if (xTime == prog1Times[i]) {
+      tempT = prog1Degrees[i];
+      lastChange = _millis;
+    }
+  }
+}
+
+/**
+ * @brief heating is ON during the night, stopped at 6am
+*/
+void blueToRed() {
+  static unsigned long lastChange = 0;
+  unsigned long _millis = millis();
+  const uint8_t nb_values = 2;
+
+  if ((_millis - lastChange) < 60000) return ;
+
+  const float prog1Times[]   = {8.00, 6.00};
+  const float prog1Degrees[] = {19.0, 15.00};
+
+  float xTime;
+  DateTime now;
+  now = rtc.now();
+  xTime = now.hour() + (now.minute() / 100.0);
+  for (uint8_t i = 0; i < nb_values; i++) {
+    if (xTime == prog1Times[i]) {
+      tempT = prog1Degrees[i];
+      lastChange = _millis;
+    }
+  }
+}
+
+void forTesting() {
+  static unsigned long lastChange = 0;
+  unsigned long _millis = millis();
+  const uint8_t nb_values = 2;
+
+  if ((_millis - lastChange) < 60000) return ;
+
+  const float prog1Times[]   = {8.00, 18.00};
+  const float prog1Degrees[] = {19.0, 13.30};
+
+  float xTime;
+  DateTime now;
+  now = rtc.now();
+  xTime = now.hour() + (now.minute() / 100.0);
   for (uint8_t i = 0; i < nb_values; i++) {
     if (xTime == prog1Times[i]) {
       tempT = prog1Degrees[i];
@@ -274,7 +315,7 @@ void setup() {
   display.setTextSize(2);
   //Set the cursor coordinates
   display.setCursor(0,0);
-  display.println("...init...");
+  display.println(INIT);
   display.display();
 
   // Temp sensor
@@ -299,8 +340,8 @@ void setup() {
   // set date and time at compilation time
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   /* */
-  delay(200);
-  blinkLeds();
+  // delay(200);
+  // blinkLeds();
   delay(500);
   blinkLeds();
   delay(500);
@@ -332,12 +373,14 @@ void loop() {
       if (sw1 && sw2) {tempStep = 0.5; led(YELLOW, 0);led(BLUE, 0);}
       break;
     case 1:
+      forTesting();
       // 14 Deg
-      tempT = 14.0;
+      // tempT = 14.0;
       break;
     case 2:
       // 19 Deg
-      tempT = 19.0;
+      // tempT = 19.0;
+      blueToRed();
       break;
     case 3:
       // prog 1

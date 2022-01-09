@@ -34,7 +34,7 @@ DateTime now;
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define INIT "maj 20/12/21\n17h12"
+#define INIT "maj 9/01/22\n17h33"
 // see https://github.com/adafruit/Adafruit_SSD1306/blob/master/examples/ssd1306_128x32_i2c/ssd1306_128x32_i2c.ino
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -223,8 +223,8 @@ void blueToRed() {
 
   if ((_millis - lastChange) < 60000) return ;
 
-  const float prog1Times[]   = {8.00, 6.00};
-  const float prog1Degrees[] = {19.0, 15.00};
+  const float prog1Times[]   = {5.50, 6.30};
+  const float prog1Degrees[] = {12.0, 12.00};
 
   float xTime;
   DateTime now;
@@ -340,12 +340,11 @@ void setup() {
   // set date and time at compilation time
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   /* */
-  // delay(200);
-  // blinkLeds();
-  delay(500);
-  blinkLeds();
-  delay(500);
-  blinkLeds();
+  
+  for (uint8_t i = 0; i < 3 ; i++){
+    blinkLeds();
+    delay(300);
+  }
 }
 
 void loop() {
